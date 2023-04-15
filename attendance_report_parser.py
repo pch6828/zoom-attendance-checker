@@ -1,7 +1,7 @@
 import sys
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 database = {}
 classdates = []
@@ -38,7 +38,7 @@ def update_attendance(date: str, attendance_info: dict):
         if curr_end > class_start:
             latetime = (curr_start - class_start).total_seconds()
             attendance_list[date] = {
-                'start': attendance_info['start'], 'end': attendance_info['end'], 'late': latetime > 600, 'disappear': False}
+                'start': attendance_info['start'], 'end': attendance_info['end'], 'late': latetime > 600, 'disappear': False, 'early_leave': False}
     else:
         prev_end = attendance_list[date]['end']
         curr_start = attendance_info['start']
@@ -95,7 +95,7 @@ def make_header():
     return header
 
 
-def write_csv(filename):
+def write_csv(filename: str):
     classdates.sort()
     file = open(filename, 'w', encoding='UTF-8')
 
@@ -112,6 +112,8 @@ def write_csv(filename):
                     row += 'L'
                 elif attendance['disappear']:
                     row += 'D'
+                elif attendance['early_leave']:
+                    row += 'E'
                 else:
                     row += 'O'
             else:
@@ -121,6 +123,41 @@ def write_csv(filename):
     file.close()
 
 
+def get_class_end(date: str):
+    class_end = datetime.strptime(date, '%Y/%m/%d')
+    class_end = class_end.replace(hour=11, minute=45, second=0)
+
+    diff = 0
+    cnt = 0
+
+    for student in database:
+        attendance_list = database[student]
+        if date in attendance_list:
+            attendance = attendance_list[date]
+            diff += (attendance['end'] - class_end).total_seconds()
+            cnt += 1
+
+    if cnt == 0:
+        diff = 0
+    else:
+        diff //= cnt
+
+    class_end += timedelta(seconds=diff)
+
+    return class_end
+
+
+def check_early_leaving(date: str):
+    class_end = get_class_end(date)
+
+    for student in database:
+        attendance_list = database[student]
+        if date in attendance_list:
+            attendance = attendance_list[date]
+            if (class_end - attendance['end']).total_seconds() >= 600:
+                attendance['early_leave'] = True
+
+
 def main():
     dirname = sys.argv[1]
     output_filename = sys.argv[2]
@@ -128,6 +165,9 @@ def main():
     files = os.listdir(dirname)
     for filename in files:
         parse(dirname, filename)
+
+    for date in classdates:
+        check_early_leaving(date)
 
     write_csv(output_filename)
 
