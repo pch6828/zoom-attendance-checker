@@ -42,8 +42,10 @@ def update_attendance(date: str, attendance_info: dict):
     else:
         prev_end = attendance_list[date]['end']
         curr_start = attendance_info['start']
+        curr_end = attendance_info['end']
 
-        attendance_list[date]['end'] = attendance_info['end']
+        if (curr_end - attendance_list[date]['end']).total_seconds() > 0:
+            attendance_list[date]['end'] = attendance_info['end']
 
         if (curr_start - prev_end).total_seconds() > 600:
             attendance_list[date]['disappear'] = True

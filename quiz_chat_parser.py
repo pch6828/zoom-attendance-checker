@@ -13,6 +13,7 @@ def reformat_name(name: str):
 
     name = re.sub(r'[_-]|\(.+\)', '', name)
     name = name.strip()
+    name = name.lower()
     return name
 
 
@@ -20,7 +21,7 @@ def parse(dirname: str, filename: str):
     file = open(dirname+"/"+filename, 'r', encoding="UTF-8")
     date = filename[4:9]
     classdates.append(date)
-    regex_expression = r'(\d\d:\d\d:\d\d)\s+From ([a-zA-Z0-9가-힣\. \u4e00-\u9fff]+?)( to ([a-zA-Z\. \u4e00-\u9fff]+?)(\(Direct Message\))?(\(Privately\))?)?:'
+    regex_expression = r'(\d\d:\d\d:\d\d)\s+From ([a-zA-Z0-9가-힣()\. \u4e00-\u9fff]+?)( to ([a-zA-Z0-9가-힣()\. \u4e00-\u9fff]+?)(\(Direct Message\))?(\(Privately\))?)?:'
 
     while True:
         line = file.readline()
